@@ -16,8 +16,10 @@ class IA_Bomber:
         """
         self.game_dict = game_dic
         self.nom_joueur = num_joueur
-        self._bombe_pose = None
         self.chemin_effectue = []
+
+        self.esquiver_bombe = False
+        self.tour_bombe_posee = None
 
     def trouver_chemin(self, point_depart, point_arrivee, pred):
         chemin = []
@@ -29,33 +31,34 @@ class IA_Bomber:
         chemin.reverse()
         return chemin 
 
-    def gestion_bombe(self, game_dict : dict, pos_joueur: tuple, pred:dict):
+    def gestion_bombe(self, pos_joueur: tuple, pred: dict):
         """ Gestion_bombe permet de gérer les bombes lrosque l'IA pose une bombe en faisant reculer l'IA pour pas qu'elle puisse se prendre de dégâts
         Args: 
             pos_joueur (tuple): permet de connaître la position du joueur
             pred (tuple): permet de connaître les anciennes positions du joueur pendant son chemin
         """
-        self.game_dict = game_dict
-        pred_inversée = {}
-        
-
-            # Utilisation d'un for pour parcourir les items du dictionnaire
-        for clé, valeur in pred:
-            pred_inversée[valeur] = clé
-        
-
-        
-        if self._bombe_pose == None:
-            self._bombe_pose = 2
-            return "X"
-        elif self._bombe_pose == 2:
-            self._bombe_pose -= 1
-            return self.trouver_position_destination(pos_joueur, pred_inversée[1])
+        if self.esquiver_bombe:
+            if self.tour_bombe_posee + 4 == self.game_dict['compteur_tour']:
+                self.esquiver_bombe = False
+                self.tour_bombe_posee = None
+                return 'N'
             
-        elif self._bombe_pose == 1:
-            self._bombe_pose = None
-            return self.trouver_position_destination(pos_joueur, pred_inversée[2])
+            index = self.index_actuel
+            if index < 0:
+                self.esquiver_bombe = False
+                self.tour_bombe_posee = None
+                return 'N'
             
+            action = self.inverse(self.chemin_effectue[index])
+            self.index_actuel -= 1
+
+            return action
+
+        else:
+            self.esquiver_bombe = True
+            self.tour_bombe_posee = self.game_dict['compteur_tour']
+            self.index_actuel = len(self.chemin_effectue) - 1
+            return 'X'
 
     def trouver_position_destination(self, position_actuelle: tuple, position_souhaitee: tuple) -> str:
         """trouver_position_destination permet d'obtenir l'action que l'IA doit effectuer pour se déplacer dans une position souhaitée
@@ -68,18 +71,38 @@ class IA_Bomber:
         """
         diff_x = position_souhaitee[0] - position_actuelle[0]
         diff_y = position_souhaitee[1] - position_actuelle[1]
-        touche_resultat = None
 
-        if diff_x == 1 and diff_y == 0:
-            return "D"
-        if diff_x == -1 and diff_y == 0:
-            return "G"
-        if diff_y == -1 and diff_x == 0:
-            return "H"
-        if diff_y == 1 and diff_x ==0:
-            return "B"
-        else: 
-            return "n"
+        mouvement = 'N'
+        if diff_x == 1 and diff_y == 0 and not self.verifier_danger_bombe((position_actuelle[0] + 1, position_actuelle[1])):
+            mouvement = 'D'
+        if diff_x == -1 and diff_y == 0 and not self.verifier_danger_bombe((position_actuelle[0] - 1, position_actuelle[1])):
+            mouvement = 'G'
+        if diff_y == -1 and diff_x == 0 and not self.verifier_danger_bombe((position_actuelle[0], position_actuelle[1] - 1)):
+            mouvement = 'H'
+        if diff_y == 1 and diff_x == 0 and not self.verifier_danger_bombe((position_actuelle[0], position_actuelle[1] + 1)):
+            mouvement = 'B'
+        
+        return mouvement
+        
+    def verifier_danger_bombe(self, pos):
+        """Vérifie si une position est dans la zone de danger d'une bombe"""
+        if not pos:
+            return True
+            
+        for bombe in self.game_dict['bombes']:
+            bombe_x = bombe['position'][0]
+            bombe_y = bombe['position'][1]
+            portee = bombe['portée']
+            
+            # Même ligne ou colonne que la bombe
+            if pos[0] == bombe_x:
+                if abs(pos[1] - bombe_y) <= portee:
+                    return True
+            if pos[1] == bombe_y:
+                if abs(pos[0] - bombe_x) <= portee:
+                    return True
+
+        return False
 
     #def doit_poser_bombe(self, map:dict)
 
@@ -119,6 +142,22 @@ class IA_Bomber:
                 if self.game_dict['map'][j[1]][j[0]] == 'M':
                     return v
         return None #dans le cas où y'a rien
+    
+    def inverse(self, action: str):
+        if action == "H":
+            return "B"
+        if action == "B":
+            return "H"
+        if action == "G":
+            return "D"
+        if action == "D":
+            return "G"
+        return "N"
+    
+    def debug_game_dict(self):
+        print("---- DEBUG GAME DICT ----")
+        print(self.game_dict)
+        print("---- DEBUG GAME DICT ----")
         
 
     def action(self, game_dict : dict) -> str:
@@ -132,6 +171,8 @@ class IA_Bomber:
             str : une action 
         """
 
+        self.debug_game_dict()
+
         #############################################################
         #ICI il FAUT compléter/remplacer et faire votre version !   #
         #############################################################
@@ -144,12 +185,20 @@ class IA_Bomber:
         cible = self.analyse_position(distance)
         print(cible)
         if cible is not None:
-            if cible == pos_joueur or self._bombe_pose is not None:
-                action = self.gestion_bombe(game_dict['map'], pos_joueur, pred)
-                return action
-            chemin = self.trouver_chemin(pos_joueur, cible, pred)
-            if chemin:
-                action = self.trouver_position_destination(pos_joueur, chemin[0])
-                return action 
+
+            action_choisie = None
+            if cible == pos_joueur or self.esquiver_bombe:
+                print("--- GESTION DE LA BOMBE")
+                action_choisie = self.gestion_bombe(pos_joueur, pred)
+            else:
+                print("--- GESTION DU CHEMIN")
+                chemin = self.trouver_chemin(pos_joueur, cible, pred)
+                if chemin:
+                    action_choisie = self.trouver_position_destination(pos_joueur, chemin[0])
+            
+            self.chemin_effectue.append(action_choisie)
+            print("Action choisie : ", action_choisie)
+            print(self.chemin_effectue)
+            return action_choisie
                    
         return "N"
