@@ -29,32 +29,35 @@ class IA_Bomber:
         chemin.reverse()
         return chemin 
 
-    def gestion_bombe(self, pos_joueur: tuple, pred:dict):
+    def gestion_bombe(self, game_dict : dict, pos_joueur: tuple, pred:dict):
         """ Gestion_bombe permet de gérer les bombes lrosque l'IA pose une bombe en faisant reculer l'IA pour pas qu'elle puisse se prendre de dégâts
         Args: 
             pos_joueur (tuple): permet de connaître la position du joueur
             pred (tuple): permet de connaître les anciennes positions du joueur pendant son chemin
         """
+        self.game_dict = game_dict
         pred_inversée = {}
+        
 
             # Utilisation d'un for pour parcourir les items du dictionnaire
         for clé, valeur in pred:
             pred_inversée[valeur] = clé
+        
 
         
         if self._bombe_pose == None:
-            self._bombe_pose == 2
+            self._bombe_pose = 2
             return "X"
         elif self._bombe_pose == 2:
             self._bombe_pose -= 1
-            return self.trouver_position_destination(game_dict['map'], pos_joueur, pred_inversée[0])
+            return self.trouver_position_destination(pos_joueur, pred_inversée[1])
             
         elif self._bombe_pose == 1:
             self._bombe_pose = None
-            return self.trouver_position_destination(game_dict['map'], pos_joueur, pred_inversée[2])
+            return self.trouver_position_destination(pos_joueur, pred_inversée[2])
             
 
-    def trouver_position_destination(self, map: dict, position_actuelle: tuple, position_souhaitee: tuple) -> str:
+    def trouver_position_destination(self, position_actuelle: tuple, position_souhaitee: tuple) -> str:
         """trouver_position_destination permet d'obtenir l'action que l'IA doit effectuer pour se déplacer dans une position souhaitée
         Args: 
             map(dict): représente la map sous forme de dictionnaire donnant l'état du jeu actuel.
@@ -142,11 +145,11 @@ class IA_Bomber:
         print(cible)
         if cible is not None:
             if cible == pos_joueur or self._bombe_pose is not None:
-                action = self.gestion_bombe(pos_joueur, pred)
+                action = self.gestion_bombe(game_dict['map'], pos_joueur, pred)
                 return action
             chemin = self.trouver_chemin(pos_joueur, cible, pred)
             if chemin:
-                action = self.trouver_position_destination(game_dict['map'], pos_joueur, chemin[0])
+                action = self.trouver_position_destination(pos_joueur, chemin[0])
                 return action 
                    
         return "N"
