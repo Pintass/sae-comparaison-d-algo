@@ -14,19 +14,61 @@ class IA_Bomber:
             num_joueur (int): numéro de joueur attribué à l'IA
             game_dic (dict): descriptif de l'état initial de la partie
         """
+        self.map = game_dic
+        self._bombe_pose = None
+        self.chemin_effectue = []
 
     #TODO
     pass
 
+    def action(self, map : dict):
+        """
+        action permet à l'IA d'agir quand on lui demande
+        Args: 
+        map (dict): représente la map sous forme de dict.
+        sommet_depart(tuple): représente les coordonnées de départ sur l'axe x et y du joueur. 
+        """
 
-    def parcours_largeur(self, map: list, sommet_depart: tuple):
+
+    def trouver_position_destination(self, map: dict, position_actuelle: tuple, position_souhaitee: tuple) -> str:
+        """trouver_position_destination permet d'obtenir l'action que l'IA doit effectuer pour se déplacer dans une position souhaitée
+        Args: 
+            map(dict): représente la map sous forme de dictionnaire donnant l'état du jeu actuel.
+            position_actuelle(dict): permet de connaître le point de départ du déplacement.
+            position_souhaitee(dict): permet de connaître le point final du déplacement.
+        Returns: 
+            (str) 
+        """
+        diff_x = position_souhaitee[0] - position_actuelle[0]
+        diff_y = position_souhaitee[1] - position_actuelle[1]
+        touche_resultat = None
+
+        if diff_x == 1 and diff_y == 0:
+            touche_resultat = "D"
+            return touche_resultat
+        if diff_x == -1 and diff_y == 0:
+            touche_resultat = "G"
+            return touche_resultat
+        if diff_y == -1 and diff_x == 0:
+            touche_resultat = "H"
+            return touche_resultat
+        if diff_y == 1 and diff_x ==0:
+            touche_resultat = "B"
+            return touche_resultat
+        else: 
+            touche_resultat = "N"
+            return touche_resultat
+
+
+    def doit_poser_bombe(self, map:dict)
+
+        
+
+    def parcours_largeur(self, map: dict, sommet_depart: tuple):
         """
         parcours_largeur est une fonction permettant de trouver le chemin le plus rapide vers une position donnée
-
-        ##A CHANGER ##A CHANGER ##A CHANGER ##A CHANGER ##A CHANGER 
         Args: 
-        self (class)
-        map (list): représente la map sous forme de list.
+        map (dict): représente la map sous forme de dict.
         sommet_depart(tuple): représente les coordonnées de départ sur l'axe x et y du joueur. 
         """
         distance = {}
@@ -41,24 +83,13 @@ class IA_Bomber:
             #chercher les voisins de courant
             voisins_possibles = [(courant[0]+1,courant[1]), (courant[0]-1,courant[1]), (courant[0],courant[1]+1), (courant[0],courant[1]-1) ]
             for v in voisins_possibles:
-                if map[v[0]][v[1]] == ' ' : #si c'est une case vide
+                if map[v[1]][v[0]] == ' ' : #si c'est une case vide
                     if v not in distance :  #si v est encore inconnu
                         # dans ce cas v est une case voisine vide et inconnue
                         distance[v] = distance[courant] + 1
                         pred[v] = courant
                         attente.append(v)  #v devra devenir courant plus tard
-        """ATTENTION : actuellement la fonction ne trouve pas le point que l'on souhaite mais le fait de parcourir toute la map le plus rapidement possible, il faudrait adapter cela : 
-        
-        chemin = []
-        arrivée = (3,19)
-
-        c = arrivée
-        while c != (1,1):
-            chemin.append(c)
-            c = pred[c]
-        chemin.append((1,1))
-        print(chemin)
-        permettant de définir notre arrivée cependant ATTENTION UNE FONCTION NE DOIT PAS FAIRE PLUS DE 15-20 LIGNES"""                
+              
     
     return distance, pred
 
