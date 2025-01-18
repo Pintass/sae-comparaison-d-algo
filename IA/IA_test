@@ -245,17 +245,13 @@ class IA_Bomber:
 
             action_choisie = None
             if cible == pos_joueur or self.esquiver_bombe:
-                print("--- GESTION DE LA BOMBE")
                 action_choisie = self.gestion_bombe(pos_joueur, pred)
             else:
-                print("--- GESTION DU CHEMIN")
                 chemin = self.trouver_chemin(pos_joueur, cible, pred)
                 if chemin:
                     action_choisie = self.trouver_position_destination(pos_joueur, chemin[0])
             
             self.chemin_effectue.append(action_choisie)
-            print("Action choisie : ", action_choisie)
-            print(self.chemin_effectue)
             return action_choisie
                    
         return "N"
